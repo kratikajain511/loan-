@@ -2,36 +2,15 @@ select* from "SBAnational";
 
 
 --top 3,5 and 10  with highest bank balance with their name:
-SELECT *
-FROM (
-    SELECT *,
-        ROW_NUMBER() OVER (ORDER BY "BalanceGross" DESC) AS rank
-    FROM "SBAnational"
-    WHERE "ChgOffDate" IS NULL
-        AND "DisbursementDate" >= CURRENT_DATE - INTERVAL '2 years'
-) AS subquery
-WHERE rank <= 3;
 
-SELECT *
-FROM (
-    SELECT *,
-        ROW_NUMBER() OVER (ORDER BY "BalanceGross" DESC) AS rank
-    FROM "SBAnational"
-    WHERE "ChgOffDate" IS NULL
-        AND "DisbursementDate" >= CURRENT_DATE - INTERVAL '2 years'
-) AS subquery
-WHERE rank <= 5;
-
-
-SELECT *
-FROM (
-    SELECT *,
-        ROW_NUMBER() OVER (ORDER BY "BalanceGross" DESC) AS rank
-    FROM "SBAnational"
-    WHERE "ChgOffDate" IS NULL
-        AND "DisbursementDate" >= CURRENT_DATE - INTERVAL '2 years'
-) AS subquery
-WHERE rank <= 10;
+WITH cte AS (
+  SELECT name ,ApprovalDate,MIS_Status,GrAppv,
+    row_number() over(PARTITION BY MIS_status  ORDER BY GrAppv DESC) AS Rank__
+  FROM SBAnational
+)
+SELECT name ,ApprovalDate,MIS_Status,GrAppv
+FROM cte
+WHERE ApprovalDate < 2012 and MIS_Status='P I F' limit 5;
 
 
 
@@ -41,8 +20,12 @@ ALTER TABLE "SBAnational"
 ADD COLUMN c3 VARCHAR;
 UPDATE "SBAnational"
 SET c3 = CASE
-         WHEN  "DisbursementDate" >= CURRENT_DATE - INTERVAL '2 years' 
-		 THEN eligible
-          ELSE ineligible
-                      END;
+         WHEN `MIS_Status` ='CHGOFF'
+	 THEN 'Not eligile for loan'
+         WHEN `MIS_Status` = 'P I F'
+         THEN 'eligible for loan'
+         ELSE 'not_defined'
+	 END AS Loan_Eligibility
+         FROM "SBAnational";
+	
 
